@@ -2,22 +2,28 @@ from pybit.unified_trading import HTTP
 import pandas as pd
 import time
 import logging
+from dotenv import load_dotenv
+import os
 
 # Setup logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s')
 
 # API Credentials
-API_KEY = "YRXRe1T4bOi3STvB6Y"
-API_SECRET = "C6l4QPsA4lcQn61286HbT0HILu8CDDhOkzM0"
+load_dotenv()
+
+API_KEY = os.getenv("BYBIT_API_KEY")
+API_SECRET = os.getenv("BYBIT_API_SECRET")
 
 # Initialize Bybit REST client
 client = HTTP(testnet=True, api_key=API_KEY, api_secret=API_SECRET)
 
 # Constants
-SYMBOLS = ["BTCUSDT", "ETHUSDT", "BNBUSDT"]  # Multiple pairs
 INTERVAL = "1m"  # Candle interval
 POSITION_SIZE = 0.01  # Adjust based on your risk management
 SLEEP_TIME = 60  # Time to wait between cycles (in seconds)
+
+# Explicitly define the trading pairs you want
+TRADING_PAIRS = ["BTCUSD", "ETHUSD", "BNBUSD"]
 
 # Fetch OHLCV data
 def fetch_candlestick(symbol, interval, limit=100):
@@ -29,7 +35,7 @@ def fetch_candlestick(symbol, interval, limit=100):
             limit=limit
         )
         df = pd.DataFrame(response['result']['list'], columns=['timestamp', 'open', 'high', 'low', 'close', 'volume'])
-        df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')  # Convert timestamp
+        df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
         df[['open', 'high', 'low', 'close', 'volume']] = df[['open', 'high', 'low', 'close', 'volume']].astype(float)
         return df
     except Exception as e:
@@ -104,8 +110,11 @@ def place_order(symbol, side, qty):
 
 # Main Bot Loop
 def main():
+    # We now use the predefined symbols list
+    available_symbols = TRADING_PAIRS
+
     while True:
-        for symbol in SYMBOLS:  # Loop through all symbols
+        for symbol in available_symbols:  # Loop through predefined symbols
             try:
                 logging.info(f"Fetching data for {symbol}...")
                 ohlcv = fetch_candlestick(symbol, INTERVAL)
@@ -143,4 +152,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
